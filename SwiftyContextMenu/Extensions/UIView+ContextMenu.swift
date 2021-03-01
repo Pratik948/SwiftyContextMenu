@@ -46,16 +46,37 @@ extension UIView {
     }
 
     @objc private func handleLongPressGestureRecognizer(_ longPressGestureRecognizer: UILongPressGestureRecognizer) {
-        guard
-            longPressGestureRecognizer.state == .began
-            else { return }
-        showContextMenu(completion: nil)
+        var radialMenu:RadialMenu?
+        if let contextMenu = self.contextMenu {
+            switch contextMenu.menuStyle {
+            case .radial:
+                radialMenu = (self.contextMenuWindow?.rootViewController as? ContextMenuViewController)?.radialMenu
+            default: break
+            }
+        }
+        switch longPressGestureRecognizer.state {
+        case .began:
+            showContextMenu(completion: nil)
+        case .changed:
+            if contextMenu?.menuStyle == .radial {
+                radialMenu?.moveAtPosition(longPressGestureRecognizer.location(in: self.contextMenuWindow?.rootViewController?.view))
+            }
+        case .ended:
+            if contextMenu?.menuStyle == .radial {
+                radialMenu?.close()
+                (self.contextMenuWindow?.rootViewController as? ContextMenuViewController)?.close()
+            }
+        default: break
+        }
     }
 
     @objc private func handleTapGestureRecognizer(_ tapGestureRecognizer: UITapGestureRecognizer) {
         guard
             tapGestureRecognizer.state == .ended
             else { return }
+        guard contextMenu?.menuStyle != .radial else {
+            return
+        }
         showContextMenu(completion: nil)
     }
 }

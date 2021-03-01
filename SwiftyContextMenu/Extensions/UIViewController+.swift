@@ -24,4 +24,21 @@ extension UIViewController {
             return bottomLayoutGuide.topAnchor
         }
     }
+    
+    var leadingAnchor: NSLayoutXAxisAnchor {
+        if #available(iOS 11.0, *) {
+            return view.safeAreaLayoutGuide.leadingAnchor
+        } else {
+            return view.leadingAnchor
+        }
+    }
+    var trailingAnchor: NSLayoutXAxisAnchor {
+        if #available(iOS 11.0, *) {
+            return view.safeAreaLayoutGuide.trailingAnchor
+        } else {
+            return view.trailingAnchor
+        }
+    }
+
 }
+

@@ -25,13 +25,49 @@ class ContextMenuViewController: UIViewController {
 
     private let cellIdentifier = "ContextMenuCell"
 
-    private var isContextMenuUp: Bool { (contextMenu.sourceViewInfo?.targetFrame.midY ?? 0) > UIScreen.main.bounds.height / 2 }
+    private var isContextMenuUp: Bool {
+        switch self.contextMenu.menuStyle {
+        case .default:
+            return (contextMenu.sourceViewInfo?.targetFrame.midY ?? 0) > UIScreen.main.bounds.height / 2
+        case .radial:
+            if let originalFrame = contextMenu.sourceViewInfo?.originalFrame {
+                return (originalFrame.minY - (menuRadius + maxRadialSubMenuTitleHeight)) >= 0
+            }
+            return false
+        }
+    }
     private var isContextMenuRight: Bool { (contextMenu.sourceViewInfo?.targetFrame.midX ?? 0) > UIScreen.main.bounds.width / 2 }
-
+    private var isContextMenuCenter: Bool { return (contextMenu.sourceViewInfo?.originalFrame.midX ?? 0) == (UIScreen.main.bounds.width / 2) }
+    //Radial Menu
+    var radialMenu:RadialMenu?
+    private var menuRadius: CGFloat = 100
+    private var subMenuRadius: CGFloat = 20.0
+    private let font = UIFont.systemFont(ofSize: 24, weight: .bold)
+    private lazy var radialSubMenuTitleLabel: UILabel = {
+        let label = UILabel()
+        label.translatesAutoresizingMaskIntoConstraints = false
+        label.font = font
+        label.textColor = .white
+        label.numberOfLines = 2
+        return label
+    }()
+    private lazy var maxRadialSubMenuTitleHeight: CGFloat = {
+        let padding: CGFloat = 12
+        return CGFloat((font.lineHeight * 2) + padding)
+    } ()
+    //Haptic Feedback
+    private var selectionFeedback: UISelectionFeedbackGenerator?
+    private var impactFeedback: UIImpactFeedbackGenerator?
+    
+    //Orientation
+    private var wasGeneratingDeviceOrientationNotifications: Bool = false
+    //Init
     init(contextMenu: ContextMenu, delegate: ContextMenuViewControllerDelegate?) {
         self.delegate = delegate
         self.contextMenu = contextMenu
         self.blurView = ContextMenuBackgroundBlurView(contextMenu.style)
+        self.menuRadius = contextMenu.layout.radialMenuRadius
+        self.subMenuRadius = contextMenu.layout.radialSubMenuRadius
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -47,12 +83,51 @@ class ContextMenuViewController: UIViewController {
         addBlurView()
         addBlackOverlay()
         addSnapshotView()
-        addContextMenuTableView()
+        if contextMenu.menuStyle == .default {
+            addContextMenuTableView()
+        }
+        else {
+            addContextMenuRadialView()
+        }
+        impactFeedback = UIImpactFeedbackGenerator()
+        impactFeedback?.prepare()
+        wasGeneratingDeviceOrientationNotifications = UIDevice.current.isGeneratingDeviceOrientationNotifications
+        NotificationCenter.default.addObserver(self, selector: #selector(orientationDidChange(_:)), name: UIDevice.orientationDidChangeNotification, object: nil)
     }
 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        feedback(of: .menuVisible)
+        
+    }
+    
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         fadeIn()
+        if selectionFeedback == nil {
+            selectionFeedback = UISelectionFeedbackGenerator()
+        }
+        if !wasGeneratingDeviceOrientationNotifications {
+            UIDevice.current.beginGeneratingDeviceOrientationNotifications()
+        }
+    }
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        if !wasGeneratingDeviceOrientationNotifications {
+            UIDevice.current.endGeneratingDeviceOrientationNotifications()
+            NotificationCenter.default.removeObserver(self)
+        }
+    }
+    
+    @objc
+    private
+    func orientationDidChange(_ notification: Notification) {
+        self.close()
+    }
+    
+    func close() {
+        self.fadeOutAndClose()
     }
 
     // MARK: - Setup
@@ -133,7 +208,121 @@ class ContextMenuViewController: UIViewController {
             edgeConstraint
         ])
     }
-
+    
+    private func addContextMenuRadialView() {
+        // Setup radial menu
+        var subMenus: [RadialSubMenu] = []
+        for i in 0..<self.contextMenu.actions.count {
+            subMenus.append(self.createSubMenu(i))
+        }
+        let radialMenu = RadialMenu(menus: subMenus, radius: menuRadius)
+        view.addSubview(radialMenu)
+        view.addSubview(radialSubMenuTitleLabel)
+        radialSubMenuTitleLabel.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: 16).isActive = true
+        radialSubMenuTitleLabel.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: -16).isActive = true
+        if isContextMenuUp {
+            radialSubMenuTitleLabel.bottomAnchor.constraint(equalTo: radialMenu.topAnchor, constant: -12).isActive = true
+        }
+        else {
+            radialSubMenuTitleLabel.topAnchor.constraint(equalTo: radialMenu.bottomAnchor, constant: 12).isActive = true
+        }
+        radialMenu.layer.cornerRadius = menuRadius
+        radialMenu.openDelayStep = 0.05
+        radialMenu.closeDelayStep = 0.00
+        let minAngle:Int
+        let maxAngle:Int
+        let center: CGPoint
+        if self.isContextMenuCenter {
+            if isContextMenuUp {
+                minAngle = 225
+                maxAngle = 315
+                center = CGPoint.init(x: snapshotImageView.frame.midX, y: snapshotImageView.frame.minY)
+            }
+            else {
+                minAngle = 45
+                maxAngle = 135
+                center = CGPoint.init(x: snapshotImageView.frame.midX, y: snapshotImageView.frame.maxY)
+            }
+            radialSubMenuTitleLabel.textAlignment = .center
+        }
+        else if self.isContextMenuUp {
+            if self.isContextMenuRight {
+                minAngle = 180
+                maxAngle = 270
+                var origin = snapshotImageView.frame.origin
+                origin.x = snapshotImageView.frame.minX
+                origin.y = snapshotImageView.frame.minY
+                center = origin
+                radialSubMenuTitleLabel.textAlignment = .left
+            }
+            else {
+                minAngle = 270
+                maxAngle = 360
+                var origin = snapshotImageView.frame.origin
+                origin.x = snapshotImageView.frame.maxX
+                origin.y = snapshotImageView.frame.minY
+                center = origin
+                radialSubMenuTitleLabel.textAlignment = .right
+            }
+        }
+        else {
+            if self.isContextMenuRight {
+                minAngle = 90
+                maxAngle = 180
+                var origin = snapshotImageView.frame.origin
+                origin.x = snapshotImageView.frame.minX
+                origin.y = snapshotImageView.frame.maxY
+                center = origin
+                radialSubMenuTitleLabel.textAlignment = .left
+            }
+            else {
+                minAngle = 0
+                maxAngle = 90
+                var origin = snapshotImageView.frame.origin
+                origin.x = snapshotImageView.frame.maxX
+                origin.y = snapshotImageView.frame.maxY
+                center = origin
+                radialSubMenuTitleLabel.textAlignment = .right
+            }
+        }
+        radialMenu.center = center
+        radialMenu.minAngle = minAngle
+        radialMenu.maxAngle = maxAngle
+        radialMenu.activatedDelay = 1.0
+        radialMenu.backgroundView.alpha = 0.0
+        radialMenu.openAtPosition(center)
+        radialMenu.shrinkSubMenus()
+        self.radialMenu = radialMenu
+        view.bringSubviewToFront(radialMenu)
+        radialMenu.onHighlight = { [weak self] submenu in
+            UIView.animate(withDuration: 0.1) {
+                submenu.transform = CGAffineTransform.init(scaleX: 1.3, y: 1.3)
+                if let index = subMenus.firstIndex(of: submenu), let action = self?.contextMenu.actions[index] {
+                    self?.radialSubMenuTitleLabel.text = action.title
+                    submenu.backgroundColor = action.radialMenuHighlightBackgroundColor
+                    submenu.imageView?.tintColor = action.radialMenuHighlightImageTintColor
+                }
+            }
+            self?.feedback(of: .menuHighlight)
+        }
+        radialMenu.onUnhighlight = { [weak self] submenu in
+            UIView.animate(withDuration: 0.1) {
+                submenu.transform = CGAffineTransform.identity
+                if let index = subMenus.firstIndex(of: submenu), let action = self?.contextMenu.actions[index] {
+                    submenu.backgroundColor = submenu.isDarkMode ? action.radialMenuDarkBackgroundColor : action.radialMenuBackgroundColor
+                    submenu.imageView?.tintColor = submenu.isDarkMode ? action.tintColorDark : action.tintColor
+                }
+            }
+            self?.radialSubMenuTitleLabel.text = ""
+        }
+        radialMenu.onActivate = { [weak self] submenu in
+            if let index = subMenus.firstIndex(of: submenu), let action = self?.contextMenu.actions[index] {
+                action.action?(action)
+                self?.fadeOutAndClose()
+            }
+        }
+    }
+    
     private func makeTitleView() -> UIView? {
         guard
             let title = contextMenu.title
@@ -205,6 +394,9 @@ class ContextMenuViewController: UIViewController {
     }
 
     private func fadeOutAndClose() {
+        if self.contextMenu.menuStyle == .radial {
+            self.radialMenu?.close()
+        }
         UIView.animate(
             withDuration: 0.3,
             animations: {
@@ -247,5 +439,49 @@ extension ContextMenuViewController: UITableViewDataSource, UITableViewDelegate 
         let action = contextMenu.actions[indexPath.row]
         action.action?(action)
         fadeOutAndClose()
+    }
+    
+    func tableView(_ tableView: UITableView, shouldHighlightRowAt indexPath: IndexPath) -> Bool {
+        feedback(of: .menuHighlight)
+        return true
+    }
+}
+extension ContextMenuViewController {
+    // MARK - RadialSubMenu helpers
+    
+    private func createSubMenu(_ i: Int) -> RadialSubMenu {
+        let action = contextMenu.actions[i]
+        let img = UIImageView(image: action.image)
+        let subMenu = RadialSubMenu(imageView: img)
+        subMenu.frame = CGRect(x: 0.0, y: 0.0, width: CGFloat(subMenuRadius*2), height: CGFloat(subMenuRadius*2))
+        subMenu.layer.cornerRadius = subMenuRadius
+        subMenu.tag = i
+        img.frame.size = CGSize.init(width: subMenu.frame.size.width - 8, height: subMenu.frame.size.height - 8)
+        img.center = subMenu.center
+        img.tintColor = view.isDarkMode ? action.tintColorDark : action.tintColor
+        subMenu.backgroundColor = view.isDarkMode ? action.radialMenuDarkBackgroundColor : action.radialMenuBackgroundColor
+        return subMenu
+    }
+
+}
+
+extension ContextMenuViewController {
+    //MARK: - Haptic Feedback
+    enum FeedbackType {
+        case menuVisible
+        case menuHighlight
+    }
+    private func feedback(of type: FeedbackType) {
+        switch type {
+        case .menuVisible:
+            if #available(iOS 13, *) {
+                impactFeedback?.impactOccurred(intensity: 1)
+            }
+            else {
+                impactFeedback?.impactOccurred()
+            }
+        case .menuHighlight:
+            selectionFeedback?.selectionChanged()
+        }
     }
 }

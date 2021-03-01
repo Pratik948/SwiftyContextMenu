@@ -15,6 +15,7 @@ public struct ContextMenu {
     let layout: ContextMenuLayout
     let animation: ContextMenuAnimation
     weak var delegate: ContextMenuDelegate?
+    let menuStyle: ContextMenuStyle
 
     var sourceViewInfo: ContextMenuSourceViewInfo?
 
@@ -22,8 +23,9 @@ public struct ContextMenu {
                 actions: [ContextMenuAction],
                 style: ContextMenuUserInterfaceStyle? = nil,
                 layout: ContextMenuLayout = ContextMenuLayout(),
-                animation: ContextMenuAnimation = ContextMenuAnimation(),
-                delegate: ContextMenuDelegate? = nil) {
+                animation: ContextMenuAnimation = ContextMenuAnimation(sourceViewBounceRange: 0.9...1),
+                delegate: ContextMenuDelegate? = nil,
+                menuStyle: ContextMenuStyle = .default) {
         
         if #available(iOS 13, *) {
             self.style = style ?? .automatic
@@ -35,6 +37,7 @@ public struct ContextMenu {
         self.layout = layout
         self.animation = animation
         self.delegate = delegate
+        self.menuStyle = menuStyle
     }
 }
 
@@ -44,17 +47,29 @@ public struct ContextMenuAction {
     let tintColor: UIColor
     let tintColorDark: UIColor
     let action: ((ContextMenuAction) -> Void)?
-
+    let radialMenuHighlightBackgroundColor: UIColor?
+    let radialMenuHighlightImageTintColor: UIColor?
+    let radialMenuBackgroundColor: UIColor?
+    let radialMenuDarkBackgroundColor: UIColor?
+    
     public init(title: String,
                 image: UIImage? = nil,
                 tintColor: UIColor? = nil,
                 tintColorDark: UIColor? = nil,
+                radialMenuHighlightBackgroundColor: UIColor? = nil,
+                radialMenuHighlightImageTintColor: UIColor? = nil,
+                radialMenuBackgroundColor: UIColor? = nil,
+                radialMenuDarkBackgroundColor: UIColor? = nil,
                 action: ((ContextMenuAction) -> Void)?) {
         self.title = title
         self.image = image
         self.tintColor = tintColor ?? .defaultLabelMenuActionColor
         self.tintColorDark = tintColorDark ?? .defaultLabelMenuActionColor
         self.action = action
+        self.radialMenuHighlightBackgroundColor = radialMenuHighlightBackgroundColor
+        self.radialMenuHighlightImageTintColor = radialMenuHighlightImageTintColor
+        self.radialMenuBackgroundColor = radialMenuBackgroundColor
+        self.radialMenuDarkBackgroundColor = radialMenuDarkBackgroundColor
     }
 }
 
@@ -66,6 +81,11 @@ public enum ContextMenuEvent {
 public enum ContextMenuUserInterfaceStyle {
     @available(iOS 13, *) case automatic
     case light, dark
+}
+
+public enum ContextMenuStyle {
+    case `default`
+    case radial
 }
 
 public struct ContextMenuAnimation {
@@ -84,15 +104,21 @@ public struct ContextMenuLayout {
     let spacing: CGFloat
     let padding: CGFloat
     let sourceViewCornerRadius: CGFloat
+    let radialMenuRadius: CGFloat
+    let radialSubMenuRadius: CGFloat
 
     public init(width: CGFloat = 250,
                 spacing: CGFloat = 20,
                 padding: CGFloat = 30,
-                sourceViewCornerRadius: CGFloat = 0) {
+                sourceViewCornerRadius: CGFloat = 0,
+                radialMenuRadius: CGFloat = 100,
+                radialSubMenuRadius: CGFloat = 20) {
         self.width = width
         self.spacing = spacing
         self.padding = padding
         self.sourceViewCornerRadius = sourceViewCornerRadius
+        self.radialMenuRadius = radialMenuRadius
+        self.radialSubMenuRadius = radialSubMenuRadius
     }
 }
 
