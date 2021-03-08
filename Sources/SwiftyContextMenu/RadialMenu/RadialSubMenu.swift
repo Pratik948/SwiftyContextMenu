@@ -54,7 +54,7 @@ open class RadialSubMenu: UIView {
             }
         }
     }
-    private static let imageViewTag = 1919191919191919 //Random Tag for UIImageView
+    private static let imageViewTag = 1919191919 //Random Tag for UIImageView
     var imageView: UIImageView? {
         viewWithTag(RadialSubMenu.imageViewTag) as? UIImageView
     }
