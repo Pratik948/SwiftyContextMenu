@@ -221,10 +221,10 @@ class ContextMenuViewController: UIViewController {
         radialSubMenuTitleLabel.leadingAnchor.constraint(equalTo: self.leadingAnchor, constant: 16).isActive = true
         radialSubMenuTitleLabel.trailingAnchor.constraint(equalTo: self.trailingAnchor, constant: -16).isActive = true
         if isContextMenuUp {
-            radialSubMenuTitleLabel.bottomAnchor.constraint(equalTo: radialMenu.topAnchor, constant: -12).isActive = true
+            radialSubMenuTitleLabel.bottomAnchor.constraint(equalTo: radialMenu.topAnchor, constant: -20).isActive = true
         }
         else {
-            radialSubMenuTitleLabel.topAnchor.constraint(equalTo: radialMenu.bottomAnchor, constant: 12).isActive = true
+            radialSubMenuTitleLabel.topAnchor.constraint(equalTo: radialMenu.bottomAnchor, constant: 20).isActive = true
         }
         radialMenu.layer.cornerRadius = menuRadius
         radialMenu.openDelayStep = 0.05
