@@ -12,7 +12,17 @@ class ContextMenuWindow: UIWindow, ContextMenuViewControllerDelegate {
     private var onDismiss: (() -> Void)?
 
     init(contextMenu: ContextMenu, onDismiss: @escaping (() -> Void)) {
-        super.init(frame: UIScreen.main.bounds)
+        if #available(iOS 13, *) {
+            if let windowScene = UIApplication.shared.connectedScenes.filter({ $0.activationState == .foregroundActive }).first as? UIWindowScene {
+                super.init(windowScene: windowScene)
+            }
+            else {
+                super.init(frame: UIScreen.main.bounds)
+            }
+        }
+        else {
+            super.init(frame: UIScreen.main.bounds)
+        }
         self.onDismiss = onDismiss
         rootViewController = ContextMenuViewController(contextMenu: contextMenu, delegate: self)
         windowLevel = UIWindow.Level.statusBar
