@@ -7,7 +7,7 @@
 
 import UIKit
 
-protocol ContextMenuViewControllerDelegate: class {
+protocol ContextMenuViewControllerDelegate: AnyObject {
 
     func contextMenuViewControllerDidDismiss(_ contextMenuViewController: ContextMenuViewController)
 }
@@ -80,7 +80,9 @@ class ContextMenuViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        addBlurView()
+        if contextMenu.menuStyle == .default {
+            addBlurView()
+        }
         addBlackOverlay()
         addSnapshotView()
         if contextMenu.menuStyle == .default {
@@ -143,7 +145,7 @@ class ContextMenuViewController: UIViewController {
 
     private func addBlackOverlay() {
         overlayView.alpha = 0
-        overlayView.backgroundColor = UIColor.black.withAlphaComponent(0.25)
+        overlayView.backgroundColor = UIColor.black.withAlphaComponent(0.8)
         view.fill(with: overlayView)
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleDismissGestureRecognizer))
         overlayView.addGestureRecognizer(tapGesture)
@@ -353,7 +355,9 @@ class ContextMenuViewController: UIViewController {
             withDuration: 0.2,
             animations: {
                 self.overlayView.alpha = 1
-                self.blurView.alpha = 1
+                if self.contextMenu.menuStyle == .default {
+                    self.blurView.alpha = 1
+                }
                 self.snapshotImageView.transform = self.contextMenu.sourceViewFirstStepTransform
             },
             completion: { _ in
@@ -400,7 +404,9 @@ class ContextMenuViewController: UIViewController {
         UIView.animate(
             withDuration: 0.3,
             animations: {
-                self.blurView.alpha = 0
+                if self.contextMenu.menuStyle == .default {
+                    self.blurView.alpha = 0
+                }
                 self.contextMenuView.alpha = 0
                 self.snapshotImageView.transform = .identity
                 self.contextMenuView.transform = self.contextMenu.optionsViewFirstTransform(isContextMenuUp: self.isContextMenuUp)
@@ -456,7 +462,7 @@ extension ContextMenuViewController {
         subMenu.frame = CGRect(x: 0.0, y: 0.0, width: CGFloat(subMenuRadius*2), height: CGFloat(subMenuRadius*2))
         subMenu.layer.cornerRadius = subMenuRadius
         subMenu.tag = i
-        img.frame.size = CGSize.init(width: subMenu.frame.size.width - 8, height: subMenu.frame.size.height - 8)
+        img.frame.size = CGSize.init(width: subMenu.frame.size.width - ((action.radialMenuImagePadding ?? 0) * 2), height: subMenu.frame.size.height - ((action.radialMenuImagePadding ?? 0) * 2))
         img.center = subMenu.center
         img.tintColor = view.isDarkMode ? action.tintColorDark : action.tintColor
         subMenu.backgroundColor = view.isDarkMode ? action.radialMenuDarkBackgroundColor : action.radialMenuBackgroundColor

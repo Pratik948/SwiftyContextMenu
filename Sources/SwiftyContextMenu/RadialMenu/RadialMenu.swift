@@ -39,13 +39,13 @@ open class RadialMenu: UIView, RadialSubMenuDelegate {
     // get's set automatically on initialized to a percentage of radius
     @IBInspectable open var highlightDistance:CGFloat = 0
     
-    // FIXME: Needs better solution
+    // Needs better solution
     // Fixes issue with highlighting too close to center (get set automatically..can be changed)
     var minHighlightDistance:CGFloat = 0
     
     
     // Callbacks
-    // FIXME: Easier way to handle optional callbacks?
+    // Easier way to handle optional callbacks?
     public typealias RadialMenuCallback = () -> ()
     public typealias RadialSubMenuCallback = (_ subMenu: RadialSubMenu) -> ()
     
@@ -57,11 +57,11 @@ open class RadialMenu: UIView, RadialSubMenuDelegate {
     open var onUnhighlight: RadialSubMenuCallback?
     open var onActivate: RadialSubMenuCallback?
     
-    // FIXME: Is it possible to scale a view without changing it's children? Couldn't get that
+    // Is it possible to scale a view without changing it's children? Couldn't get that
     // working so put bg on it's own view
     public let backgroundView = UIView()
     
-    // FIXME: Make private when Swift adds access controls
+    // Make private when Swift adds access controls
     open var subMenus: [RadialSubMenu]
     
     var numOpeningSubMenus = 0
@@ -78,7 +78,7 @@ open class RadialMenu: UIView, RadialSubMenuDelegate {
     var state: State = .closed {
         didSet {
             if oldValue == state { return }
-            // FIXME: open/close callbacks are called up here but (un)highlight/activate are called below
+            // open/close callbacks are called up here but (un)highlight/activate are called below
             // we're abusing the fact that state changes are only called once here
             // but can't pass submenu context without ugly global state
             switch state {
@@ -224,7 +224,7 @@ open class RadialMenu: UIView, RadialSubMenuDelegate {
         }
     }
     
-    // FIXME: Refactor entire method
+    // Refactor entire method
     open func moveAtPosition(_ position:CGPoint) {
         
         if state != .opened && state != .highlighted && state != .unhighlighted {
@@ -278,7 +278,7 @@ open class RadialMenu: UIView, RadialSubMenuDelegate {
         }
     }
     
-    // FIXME: Clean this up & make it more clear what's happening
+    // Clean this up & make it more clear what's happening
     func grow() {
         scaleBackgroundView(highlightScale)
         growSubMenus()
@@ -308,7 +308,7 @@ open class RadialMenu: UIView, RadialSubMenuDelegate {
     
     func growSubMenus() {
         
-        // FIXME: Refactor
+        // Refactor
         for subMenu in subMenus {
             let subMenuPos = getExpandedPositionForSubMenu(subMenu)
             moveSubMenuToPosition(subMenu, pos: subMenuPos)
@@ -317,7 +317,7 @@ open class RadialMenu: UIView, RadialSubMenuDelegate {
     
     func shrinkSubMenus() {
         
-        // FIXME: Refactor
+        // Refactor
         for subMenu in subMenus {
             let subMenuPos = getPositionForSubMenu(subMenu)
             moveSubMenuToPosition(subMenu, pos: subMenuPos)

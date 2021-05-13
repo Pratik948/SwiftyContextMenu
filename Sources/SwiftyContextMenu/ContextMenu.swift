@@ -51,6 +51,7 @@ public struct ContextMenuAction {
     let radialMenuHighlightImageTintColor: UIColor?
     let radialMenuBackgroundColor: UIColor?
     let radialMenuDarkBackgroundColor: UIColor?
+    let radialMenuImagePadding: CGFloat?
     
     public init(title: String,
                 image: UIImage? = nil,
@@ -60,6 +61,7 @@ public struct ContextMenuAction {
                 radialMenuHighlightImageTintColor: UIColor? = nil,
                 radialMenuBackgroundColor: UIColor? = nil,
                 radialMenuDarkBackgroundColor: UIColor? = nil,
+                radialMenuImagePadding: CGFloat? = nil,
                 action: ((ContextMenuAction) -> Void)?) {
         self.title = title
         self.image = image
@@ -70,6 +72,7 @@ public struct ContextMenuAction {
         self.radialMenuHighlightImageTintColor = radialMenuHighlightImageTintColor
         self.radialMenuBackgroundColor = radialMenuBackgroundColor
         self.radialMenuDarkBackgroundColor = radialMenuDarkBackgroundColor
+        self.radialMenuImagePadding = radialMenuImagePadding
     }
 }
 
@@ -185,7 +188,7 @@ extension UIView: ContextMenuSourceView {
                 x = originalFrame.origin.x
             }
             if originalFrame.minY < padding {
-                y = padding 
+                y = padding
             } else if originalFrame.maxY > UIScreen.main.bounds.height - padding {
                 y = UIScreen.main.bounds.height - originalFrame.height - padding
             } else {

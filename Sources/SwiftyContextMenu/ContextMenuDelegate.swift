@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol ContextMenuDelegate: class {
+public protocol ContextMenuDelegate: AnyObject {
 
     func contextMenuWillAppear(_ contextMenu: ContextMenu)
     func contextMenuDidAppear(_ contextMenu: ContextMenu)
